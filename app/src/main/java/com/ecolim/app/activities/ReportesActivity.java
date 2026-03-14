@@ -1,5 +1,6 @@
 package com.ecolim.app.activities;
 
+import android.content.Intent; // Agregamos esta importación
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -56,19 +57,38 @@ public class ReportesActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        adapter.setOnItemClickListener(residuo -> {
-            new AlertDialog.Builder(this)
-                    .setTitle("Eliminar Registro")
-                    .setMessage("¿Estás seguro de que quieres eliminar este reporte?")
-                    .setPositiveButton("Eliminar", (dialog, which) -> {
-                        db.eliminarResiduo(residuo.getId());
-                        String seleccion = spinnerFiltro.getSelectedItem().toString();
-                        adapter.actualizarLista(seleccion.equals("Todos") ? db.obtenerTodos() : db.filtrarPorTipo(seleccion));
-                        actualizarEstadisticas(seleccion);
-                        Toast.makeText(this, "Registro eliminado", Toast.LENGTH_SHORT).show();
-                    })
-                    .setNegativeButton("Cancelar", null)
-                    .show();
+        // CONFIGURACIÓN DEL LISTENER PARA ELIMINAR Y EDITAR
+        adapter.setOnItemClickListener(new ResiduoAdapter.OnItemClickListener() {
+            @Override
+            public void onDeleteClick(Residuo residuo) {
+                new AlertDialog.Builder(ReportesActivity.this)
+                        .setTitle("Eliminar Registro")
+                        .setMessage("¿Estás seguro de que quieres eliminar este reporte?")
+                        .setPositiveButton("Eliminar", (dialog, which) -> {
+                            db.eliminarResiduo(residuo.getId());
+                            String seleccion = spinnerFiltro.getSelectedItem().toString();
+                            adapter.actualizarLista(seleccion.equals("Todos") ? db.obtenerTodos() : db.filtrarPorTipo(seleccion));
+                            actualizarEstadisticas(seleccion);
+                            Toast.makeText(ReportesActivity.this, "Registro eliminado", Toast.LENGTH_SHORT).show();
+                        })
+                        .setNegativeButton("Cancelar", null)
+                        .show();
+            }
+
+            @Override
+            public void onEditClick(Residuo residuo) {
+                // AQUÍ MANDAMOS LOS DATOS A REGISTROACTIVITY
+                Intent intent = new Intent(ReportesActivity.this, RegistroActivity.class);
+                intent.putExtra("id", residuo.getId());
+                intent.putExtra("tipo", residuo.getTipo());
+                intent.putExtra("cantidad", residuo.getCantidad());
+                intent.putExtra("unidad", residuo.getUnidad());
+                intent.putExtra("ubicacion", residuo.getUbicacion());
+                intent.putExtra("fecha", residuo.getFecha());
+                intent.putExtra("trabajador", residuo.getTrabajador());
+                intent.putExtra("esEdicion", true); // Bandera para saber que vamos a editar
+                startActivity(intent);
+            }
         });
     }
 

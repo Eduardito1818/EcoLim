@@ -3,7 +3,6 @@ package com.ecolim.app.activities;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
@@ -13,6 +12,7 @@ import com.ecolim.app.database.DatabaseHelper;
 import com.ecolim.app.models.Residuo;
 import com.google.android.material.textfield.TextInputEditText;
 import java.text.SimpleDateFormat;
+import java.util.Arrays; // Agregado
 import java.util.Date;
 import java.util.Locale;
 
@@ -22,6 +22,10 @@ public class RegistroActivity extends AppCompatActivity {
     TextInputEditText etCantidad, etUbicacion, etTrabajador;
     Button btnGuardar, btnLimpiar;
     DatabaseHelper db;
+
+    // VARIABLES PARA LA EDICIÓN
+    boolean esEdicion = false;
+    int idEdicion = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,10 +45,28 @@ public class RegistroActivity extends AppCompatActivity {
         String[] tipos = {"Organico", "Plastico", "Metal", "Papel", "Vidrio", "Peligroso", "Otro"};
         String[] unidades = {"kg", "litros", "unidades", "m3"};
 
-        spinnerTipo.setAdapter(new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item, tipos));
-        spinnerUnidad.setAdapter(new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item, unidades));
+        spinnerTipo.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, tipos));
+        spinnerUnidad.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, unidades));
+
+        // --- LÓGICA PARA RECIBIR DATOS DE EDICIÓN ---
+        Bundle extras = getIntent().getExtras();
+        if (extras != null && extras.getBoolean("esEdicion", false)) {
+            esEdicion = true;
+            idEdicion = extras.getInt("id");
+
+            // Rellenamos los campos con los datos que mandamos desde Reportes
+            etCantidad.setText(String.valueOf(extras.getDouble("cantidad")));
+            etUbicacion.setText(extras.getString("ubicacion"));
+            etTrabajador.setText(extras.getString("trabajador"));
+
+            // Seleccionamos los items correctos en los Spinners
+            spinnerTipo.setSelection(Arrays.asList(tipos).indexOf(extras.getString("tipo")));
+            spinnerUnidad.setSelection(Arrays.asList(unidades).indexOf(extras.getString("unidad")));
+
+            // Cambiamos el texto del botón y el título
+            btnGuardar.setText("Actualizar Cambios");
+            if (getSupportActionBar() != null) getSupportActionBar().setTitle("Editar Residuo");
+        }
 
         btnGuardar.setOnClickListener(v -> guardarResiduo());
         btnLimpiar.setOnClickListener(v -> limpiarFormulario());
@@ -78,8 +100,7 @@ public class RegistroActivity extends AppCompatActivity {
             return;
         }
 
-        String fecha = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                .format(new Date());
+        String fecha = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(new Date());
 
         Residuo r = new Residuo(
                 spinnerTipo.getSelectedItem().toString(),
@@ -88,15 +109,28 @@ public class RegistroActivity extends AppCompatActivity {
                 ubicacion, fecha, trabajador
         );
 
-        long id = db.insertarResiduo(r);
-        if (id > 0) {
-            new AlertDialog.Builder(this)
-                    .setTitle("¡Éxito!")
-                    .setMessage("Residuo guardado correctamente")
-                    .setPositiveButton("Aceptar", (dialog, which) -> finish())
-                    .show();
+        if (esEdicion) {
+            // SI ES EDICIÓN, USAMOS EL ID QUE GUARDAMOS
+            r.setId(idEdicion);
+            int filas = db.actualizarResiduo(r);
+            if (filas > 0) {
+                Toast.makeText(this, "Actualizado correctamente", Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                Toast.makeText(this, "Error al actualizar", Toast.LENGTH_SHORT).show();
+            }
         } else {
-            Toast.makeText(this, "Error al guardar en la base de datos", Toast.LENGTH_SHORT).show();
+            // SI ES NUEVO, HACEMOS EL INSERT NORMAL
+            long id = db.insertarResiduo(r);
+            if (id > 0) {
+                new AlertDialog.Builder(this)
+                        .setTitle("¡Éxito!")
+                        .setMessage("Residuo guardado correctamente")
+                        .setPositiveButton("Aceptar", (dialog, which) -> finish())
+                        .show();
+            } else {
+                Toast.makeText(this, "Error al guardar", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }

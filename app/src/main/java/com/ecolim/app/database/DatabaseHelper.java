@@ -58,6 +58,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return rows;
     }
+    public int actualizarResiduo(Residuo r) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+
+        // Ponemos los datos nuevos basándonos en el objeto Residuo que recibimos
+        cv.put("tipo", r.getTipo());
+        cv.put("cantidad", r.getCantidad());
+        cv.put("unidad", r.getUnidad());
+        cv.put("ubicacion", r.getUbicacion());
+        cv.put("fecha", r.getFecha());
+        cv.put("trabajador", r.getTrabajador());
+
+        // Actualizamos el registro donde el ID coincida
+        int filasAfectadas = db.update(TABLE, cv, "id=?", new String[]{String.valueOf(r.getId())});
+        db.close();
+
+        return filasAfectadas; // Si devuelve 1, es que todo salió bien
+    }
 
     public List<Residuo> obtenerTodos() {
         List<Residuo> lista = new ArrayList<>();

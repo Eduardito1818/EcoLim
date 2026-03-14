@@ -16,8 +16,10 @@ public class ResiduoAdapter extends RecyclerView.Adapter<ResiduoAdapter.ViewHold
     private List<Residuo> lista;
     private OnItemClickListener listener;
 
+    // 1. Interfaz corregida (una sola con ambos métodos)
     public interface OnItemClickListener {
         void onDeleteClick(Residuo residuo);
+        void onEditClick(Residuo residuo);
     }
 
     public void setOnItemClickListener(OnItemClickListener listener) {
@@ -49,9 +51,17 @@ public class ResiduoAdapter extends RecyclerView.Adapter<ResiduoAdapter.ViewHold
         holder.tvUbicacion.setText(r.getUbicacion());
         holder.tvTrabajador.setText("Por: " + r.getTrabajador());
 
+        // Clic para eliminar
         holder.btnEliminar.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onDeleteClick(r);
+            }
+        });
+
+        // 2. Clic para editar agregado
+        holder.btnEditar.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onEditClick(r);
             }
         });
     }
@@ -63,7 +73,7 @@ public class ResiduoAdapter extends RecyclerView.Adapter<ResiduoAdapter.ViewHold
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvTipo, tvFecha, tvCantidad, tvUbicacion, tvTrabajador;
-        ImageButton btnEliminar;
+        ImageButton btnEliminar, btnEditar; // 3. Botón editar agregado aquí
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -73,6 +83,7 @@ public class ResiduoAdapter extends RecyclerView.Adapter<ResiduoAdapter.ViewHold
             tvUbicacion = itemView.findViewById(R.id.tvUbicacion);
             tvTrabajador = itemView.findViewById(R.id.tvTrabajador);
             btnEliminar = itemView.findViewById(R.id.btnEliminar);
+            btnEditar = itemView.findViewById(R.id.btnEditar); // 4. Vinculado
         }
     }
 }

@@ -58,11 +58,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return rows;
     }
+
     public int actualizarResiduo(Residuo r) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
-
-        // Ponemos los datos nuevos basándonos en el objeto Residuo que recibimos
         cv.put("tipo", r.getTipo());
         cv.put("cantidad", r.getCantidad());
         cv.put("unidad", r.getUnidad());
@@ -70,11 +69,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put("fecha", r.getFecha());
         cv.put("trabajador", r.getTrabajador());
 
-        // Actualizamos el registro donde el ID coincida
         int filasAfectadas = db.update(TABLE, cv, "id=?", new String[]{String.valueOf(r.getId())});
         db.close();
-
-        return filasAfectadas; // Si devuelve 1, es que todo salió bien
+        return filasAfectadas;
     }
 
     public List<Residuo> obtenerTodos() {
@@ -102,7 +99,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<Residuo> filtrarPorTipo(String tipo) {
         List<Residuo> lista = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE + " WHERE tipo=? ORDER BY id DESC", new String[]{tipo});
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE + " WHERE LOWER(tipo) = LOWER(?) ORDER BY id DESC", new String[]{tipo});
+
         if (cursor.moveToFirst()) {
             do {
                 Residuo r = new Residuo();
@@ -127,8 +125,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (tipo.equals("Todos")) {
             cursor = db.rawQuery("SELECT SUM(cantidad) FROM " + TABLE, null);
         } else {
-            cursor = db.rawQuery("SELECT SUM(cantidad) FROM " + TABLE + " WHERE tipo=?", new String[]{tipo});
+            cursor = db.rawQuery("SELECT SUM(cantidad) FROM " + TABLE + " WHERE LOWER(tipo) = LOWER(?)", new String[]{tipo});
         }
+
         double suma = 0;
         if (cursor.moveToFirst()) {
             suma = cursor.getDouble(0);
